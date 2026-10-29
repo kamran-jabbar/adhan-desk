@@ -81,6 +81,7 @@ export class AppController {
       ['test-audio', 'testAudio'], ['stop-audio', 'stopAudio'],
       ['source-link', 'openSource'], ['recording-link', 'openRecording'],
       ['audio-credits', 'openAudioCredits'],
+      ['support-project', 'openSupport'],
     ];
     for (const [id, method, message] of actions) on(id, 'click', () => this.perform(id, () => this.api[method](), message));
     on('quit-button', 'click', () => this.api.quit());

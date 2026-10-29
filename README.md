@@ -101,6 +101,10 @@ Run `pnpm test` before submitting a change. Include a concrete reproduction for 
 
 Settings, imported audio, recent logs and the dated cache live in Electron's per-user application data directory. Requests go to the selected public MAWAQIT page and, only in YouTube mode, YouTube's player resources. There is no application analytics service.
 
+## Support
+
+If Adhan Desk is useful to you, you can [support Kamran's work on Buy Me a Coffee](https://buymeacoffee.com/kamranjabbar). Contributions help maintain Adhan Desk and build future practical projects. Support is optional; the app and all its features remain free.
+
 ## License
 
 Application source: [MIT](LICENSE). Bundled default audio: [CC BY-SA 4.0 with attribution](docs/AUDIO-LICENSE.md). MAWAQIT data, branding, external videos and imported recordings retain their respective rights. Personal recordings are not included in this repository or its public installers.

@@ -10,6 +10,7 @@ const { DesktopService } = require('../services/DesktopService.cjs');
 const { PlaybackService } = require('../services/PlaybackService.cjs');
 
 const AUDIO_CREDITS = 'https://commons.wikimedia.org/wiki/File:The_Adhan_-_Muslim_Call_to_Prayer_-_Aaqib_Azeez.mp3';
+const SUPPORT_URL = 'https://buymeacoffee.com/kamranjabbar';
 
 // The controller coordinates models and services. It contains no DOM rendering.
 class AppController {
@@ -153,6 +154,7 @@ class AppController {
     handle('openSource', () => shell.openExternal(validateSource(this.model.settings.sourceUrl)));
     handle('openRecording', () => shell.openExternal(`https://www.youtube.com/watch?v=${youtubeId(this.model.settings.youtubeUrl)}`));
     handle('openAudioCredits', () => shell.openExternal(AUDIO_CREDITS));
+    handle('openSupport', () => shell.openExternal(SUPPORT_URL));
     handle('quit', () => this.desktop.quit());
     ipcMain.handle('player:config', event => { if (!this.player?.isSender(event)) throw new Error('Untrusted player'); return this.player.config; });
     ipcMain.handle('player:stop', event => { if (this.player?.isSender(event)) this.player.stop(); });

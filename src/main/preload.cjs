@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('adhan', Object.freeze({
   testFajrAudio: () => ipcRenderer.invoke('adhan:testFajrAudio'),
   useDefaultAudio: () => ipcRenderer.invoke('adhan:useDefaultAudio'),
   openAudioCredits: () => ipcRenderer.invoke('adhan:openAudioCredits'),
+  openSupport: () => ipcRenderer.invoke('adhan:openSupport'),
   testAudio: () => ipcRenderer.invoke('adhan:testAudio'),
   stopAudio: () => ipcRenderer.invoke('adhan:stopAudio'),
   openSource: () => ipcRenderer.invoke('adhan:openSource'),
