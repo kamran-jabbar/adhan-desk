@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'">
+    <title>Adhan Desk</title>
+    <link rel="stylesheet" href="styles.css">
+    <script type="module" src="renderer.js">
+    </script>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-symbol" aria-hidden="true">☾</span>
+        <div>Adhan Desk<small>A LITTLE CLOSER, EVERY DAY</small>
+        </div>
+      </div>
+      <nav aria-label="Main navigation">
+        <button class="nav-item active" data-view="today" aria-current="page">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 10.5 12 3l9 7.5V21h-6v-7H9v7H3Z"/>
+          </svg>Today<span class="nav-dot">
+          </span>
+        </button>
+        <button class="nav-item" data-view="settings">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 7h16M4 17h16M8 4v6m8 4v6"/>
+          </svg>Preferences</button>
+        <button class="nav-item" data-view="activity">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 7v5l3 2"/>
+          </svg>Activity</button>
+      </nav>
+      <div class="mosque-block">
+        <div class="eyebrow">YOUR MOSQUE</div>
+        <div class="mosque-icon" aria-hidden="true">
+          <svg viewBox="0 0 60 48">
+            <path d="M13 43V23h34v20M23 43V31h14v12M18 23c0-8 12-10 12-17 0 7 12 9 12 17M5 43V15m50 28V15M2 15h6m44 0h6M30 6V2"/>
+          </svg>
+        </div>
+        <h2 id="sidebar-mosque">Connecting to your mosque</h2>
+        <p id="sidebar-zone">Prayer times from MAWAQIT</p>
+        <button class="text-button" id="source-link">View mosque page <span aria-hidden="true">↗</span>
+        </button>
+      </div>
+      <div class="sidebar-footer">
+        <span class="little-dot" id="tray-dot">
+        </span>
+        <span id="tray-label">Lives in your system tray</span>
+        <p>Closing this window keeps<br>your adhan running.</p>
+        <button class="text-button subtle" id="quit-button">Quit Adhan Desk</button>
+      </div>
+    </aside>
+    <main>
+      <header class="topbar">
+        <div>
+          <div class="eyebrow" id="date-label">YOUR DAILY RHYTHM</div>
+          <h1 id="page-title">A moment for what matters.</h1>
+        </div>
+        <label class="scheduler-control">
+          <span id="scheduler-label">Adhan enabled</span>
+          <input type="checkbox" id="enabled-toggle" class="switch-input">
+          <span class="switch-track" aria-hidden="true">
+          </span>
+        </label>
+      </header>
+      <div id="error-banner" class="banner error" role="alert" hidden>
+        <span id="error-message">
+        </span>
+        <button id="retry-button">Try again</button>
+      </div>
+      <div id="notice" class="banner notice" role="status" hidden>
+      </div>
+      <section id="view-today" class="view">
+        <div class="next-prayer-card">
+          <div class="arch arch-one" aria-hidden="true">
+          </div>
+          <div class="arch arch-two" aria-hidden="true">
+          </div>
+          <div class="arch arch-three" aria-hidden="true">
+          </div>
+          <div class="hero-copy">
+            <div class="eyebrow light" id="next-eyebrow">THE NEXT CALL TO PRAYER</div>
+            <div class="next-prayer-line">
+              <h2 id="next-prayer">Connecting</h2>
+              <span id="next-time">—:—</span>
+            </div>
+            <p id="next-description">Bringing your mosque's timetable to your desktop.</p>
+            <div class="countdown-wrap">
+              <span class="countdown-icon" aria-hidden="true">◷</span>
+              <div>
+                <span id="countdown">Waiting for prayer times</span>
+                <span class="countdown-caption" id="countdown-caption">A quiet reminder. A full adhan.</span>
+              </div>
+            </div>
+          </div>
+          <div class="hero-moon" aria-hidden="true">☾</div>
+        </div>
+        <div class="today-grid">
+          <section class="panel timetable-panel" aria-labelledby="times-heading">
+            <div class="panel-heading">
+              <div>
+                <div class="eyebrow">FIVE MOMENTS, EVERY DAY</div>
+                <h2 id="times-heading">Today's prayer times</h2>
+              </div>
+              <span class="small-pill" id="zone-pill">Mosque time</span>
+            </div>
+            <div id="prayer-list" class="prayer-list">
+            </div>
+            <div class="timetable-footer">
+              <span id="sunrise-label">Sunrise —:—</span>
+              <span>Adhan at prayer time</span>
+            </div>
+          </section>
+          <div class="right-stack">
+            <section class="panel audio-panel">
+              <div class="eyebrow">YOUR CALL TO PRAYER</div>
+              <div class="audio-title">
+                <span class="audio-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M4 9v6h4l5 4V5L8 9H4Zm13-1c3 2 3 6 0 8m3-11c5 4 5 10 0 14"/>
+                  </svg>
+                </span>
+                <h2>Full adhan.<br>Familiar voice.</h2>
+              </div>
+              <p id="audio-description">An included full adhan recording, ready for automatic prayer-time playback.</p>
+              <div class="audio-actions">
+                <button class="button primary" id="quick-import-audio" hidden>Choose adhan recording</button>
+                <button class="button primary" id="test-audio">
+                  <span aria-hidden="true">▷</span> Test adhan</button>
+                <button class="button stop" id="stop-audio" hidden>Stop</button>
+              </div>
+              <button class="text-button" data-go-settings>Audio preferences <span aria-hidden="true">→</span>
+              </button>
+            </section>
+            <section class="readiness-card">
+              <span class="readiness-icon" aria-hidden="true">✓</span>
+              <div>
+                <h3 id="readiness-title">Ready on your desktop</h3>
+                <p id="readiness-description">Close this window to keep adhan running in the background. Keep your computer awake and speakers unmuted.</p>
+              </div>
+            </section>
+          </div>
+        </div>
+        <footer class="sync-footer">
+          <div>
+            <span class="little-dot" id="sync-dot">
+            </span>
+            <span id="sync-label">Connecting to MAWAQIT…</span>
+          </div>
+          <button class="text-button" id="sync-button">
+            <span aria-hidden="true">↻</span> Refresh times</button>
+        </footer>
+      </section>
+      <section id="view-settings" class="view" hidden>
+        <div class="settings-grid">
+          <section class="panel settings-panel">
+            <div class="eyebrow">FOLLOW YOUR COMMUNITY</div>
+            <h2>Your mosque</h2>
+            <p>Use a public MAWAQIT mosque link. Prayer times follow the mosque's local timezone.</p>
+            <form id="source-form">
+              <label for="source-url">MAWAQIT mosque URL</label>
+              <input type="url" id="source-url" required placeholder="https://mawaqit.net/en/your-mosque" spellcheck="false">
+              <button class="button primary" type="submit" id="save-source">Save & sync mosque</button>
+            </form>
+          </section>
+          <section class="panel settings-panel">
+            <div class="eyebrow">A VOICE THAT FEELS LIKE HOME</div>
+            <h2>Adhan audio</h2>
+            <label class="radio-option">
+              <input type="radio" name="audio-mode" value="local">
+              <span>
+                <strong>Offline recording <span class="recommended-tag">RECOMMENDED</span>
+                </strong>
+                <small id="audio-file-label">Included adhan recording</small>
+              </span>
+            </label>
+            <div class="local-audio-actions">
+              <button class="button secondary" id="default-audio">Use default adhan</button>
+              <button class="button secondary" id="import-audio">Choose audio file</button>
+            </div>
+            <div class="audio-credit">
+              <p>Adhan: Atcovi / Wikimedia Commons · CC BY-SA 4.0</p>
+              <button class="text-button" id="audio-credits">Audio credits ↗</button>
+            </div>
+            <label class="radio-option">
+              <input type="radio" name="audio-mode" value="youtube">
+              <span>
+                <strong>YouTube recording</strong>
+                <small>Optional · internet and embeddable video required</small>
+              </span>
+            </label>
+            <form id="youtube-form" class="youtube-form">
+              <label for="youtube-url">YouTube recording URL</label>
+              <input type="url" id="youtube-url" required placeholder="https://www.youtube.com/watch?v=…" spellcheck="false">
+              <button class="button secondary" type="submit" id="save-youtube">Save recording</button>
+            </form>
+            <button class="text-button recording-link" id="recording-link">Open selected YouTube recording ↗</button>
+            <p class="youtube-warning" id="youtube-warning" hidden>The original recording you shared blocked embedded playback during verification. Use the included adhan recording, a personal audio file, or a different YouTube video that allows embedding.</p>
+            <div class="volume-row">
+              <label for="volume">Volume <span id="volume-label">75%</span>
+              </label>
+              <input type="range" id="volume" min="0" max="100" step="1">
+            </div>
+            <p class="fine-print">The full recording plays once at each enabled prayer. System volume and mute still apply.</p>
+          </section>
+          <section class="panel settings-panel">
+            <div class="eyebrow">MAKE IT YOUR DAILY RHYTHM</div>
+            <h2>Prayer reminders</h2>
+            <div id="prayer-toggles" class="prayer-toggles">
+            </div>
+            <p class="fine-print">Sunrise and iqama do not trigger the adhan.</p>
+          </section>
+          <section class="panel settings-panel">
+            <div class="eyebrow">READY WHEN YOU ARE</div>
+            <h2>Desktop behavior</h2>
+            <label class="setting-toggle">
+              <span>
+                <strong>Start when I sign in</strong>
+                <small>Run quietly in the system tray.</small>
+              </span>
+              <input type="checkbox" id="autostart" class="switch-input">
+              <span class="switch-track" aria-hidden="true">
+              </span>
+            </label>
+            <label class="setting-toggle">
+              <span>
+                <strong>Keep computer awake</strong>
+                <small>Prevent idle sleep while adhan is enabled.</small>
+              </span>
+              <input type="checkbox" id="prevent-sleep" class="switch-input">
+              <span class="switch-track" aria-hidden="true">
+              </span>
+            </label>
+            <div class="desktop-note">
+              <span aria-hidden="true">◷</span>
+              <p>Adhan Desk needs a running, signed-in computer. It cannot play while the computer is sleeping or powered off.</p>
+            </div>
+          </section>
+        </div>
+      </section>
+      <section id="view-activity" class="view" hidden>
+        <section class="panel activity-panel">
+          <div class="panel-heading">
+            <div>
+              <div class="eyebrow">A LITTLE PEACE OF MIND</div>
+              <h2>Recent activity</h2>
+            </div>
+            <span class="small-pill">On this device</span>
+          </div>
+          <p class="activity-intro">Timetable refreshes and playback activity, so you can see that everything is working.</p>
+          <div id="activity-list">
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

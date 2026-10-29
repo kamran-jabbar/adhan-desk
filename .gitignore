@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.test-profile/
+*.log
+.env
+.env.*
+!.env.example
+recordings/
+state.json
+*.m4a

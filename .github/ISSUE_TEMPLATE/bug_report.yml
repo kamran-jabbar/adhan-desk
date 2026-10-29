@@ -1,0 +1,70 @@
+name: Bug report
+description: Report a problem with prayer times, playback, startup, or the desktop app.
+title: '[Bug] '
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Include enough detail to reproduce the problem. Remove personal usernames, private paths, and unrelated information from logs or screenshots. Do not upload your full application profile or personal recordings.
+
+        For a security vulnerability, use the private reporting instructions in [SECURITY.md](https://github.com/kamran-jabbar/adhan-desk/blob/main/SECURITY.md).
+  - type: input
+    id: version
+    attributes:
+      label: Adhan Desk version
+      placeholder: 'For example: 0.1.0'
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+  - type: input
+    id: os-details
+    attributes:
+      label: OS version and CPU architecture
+      placeholder: 'For example: Windows 11 x64, macOS 15 arm64, or Ubuntu 24.04 x64'
+    validations:
+      required: true
+  - type: dropdown
+    id: playback
+    attributes:
+      label: Playback mode
+      options:
+        - Bundled recording
+        - Imported local recording
+        - YouTube
+        - Not related to playback
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Describe the steps and whether the computer was awake, locked, or resuming from sleep.
+      placeholder: |
+        1. Open the app...
+        2. Change...
+        3. Observe...
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+      description: For a timing problem, include the public mosque URL, date, prayer, expected time, actual time, and the PC and mosque timezones.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Activity messages or error text
+      description: Paste only the relevant entries and remove personal information.
+      render: text

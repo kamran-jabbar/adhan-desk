@@ -1,0 +1,145 @@
+name: Test, build, and release Adhan Desk
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Do not interrupt a release while its assets are being uploaded.
+concurrency:
+  group: desktop-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x64 installer
+            os: windows-latest
+            args: --win nsis --x64
+            artifact: adhan-desk-windows-x64
+          - name: macOS x64 and arm64 installers
+            os: macos-latest
+            args: --mac dmg --x64 --arm64
+            artifact: adhan-desk-macos
+          - name: Linux x64 AppImage
+            os: ubuntu-latest
+            args: --linux AppImage --x64
+            artifact: adhan-desk-linux-x64
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.25.0
+      - name: Install pinned dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Test source, scheduler, and local server
+        run: pnpm test
+      - name: Build installers without publishing
+        run: pnpm exec electron-builder ${{ matrix.args }} --publish never
+      - name: Upload installer files only
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact }}
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+          path: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.AppImage
+
+  release:
+    name: Publish prerelease from main
+    needs: build
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Collect installers from this successful workflow
+        uses: actions/download-artifact@v8
+        with:
+          pattern: adhan-desk-*
+          path: installers
+          merge-multiple: true
+      - name: Publish a new version without replacing existing releases
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./package.json').version")"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            printf '%s\n' '::error::package.json must contain a valid release version.'
+            exit 1
+          fi
+          tag="v$version"
+          if gh release view "$tag" --repo "$GH_REPO" >/dev/null 2>&1; then
+            printf 'Release %s already exists; leaving it unchanged. Bump package.json to publish another version.\n' "$tag"
+            exit 0
+          fi
+          if gh api "repos/$GH_REPO/git/ref/tags/$tag" >/dev/null 2>&1; then
+            printf '::error::Tag %s already exists without a release; refusing to reuse it automatically.\n' "$tag"
+            exit 1
+          fi
+          node <<'NODE'
+          const fs = require('node:fs');
+          const files = fs.readdirSync('installers');
+          const groups = [/\.exe$/, /\.dmg$/, /\.AppImage$/];
+          if (groups.some(pattern => !files.some(file => pattern.test(file)))) {
+            throw new Error('A Windows, macOS, or Linux installer is missing.');
+          }
+          if (files.some(file => !groups.some(pattern => pattern.test(file)))) {
+            throw new Error('Unexpected file in the release installer directory.');
+          }
+          NODE
+          (cd installers && sha256sum -- *) > SHA256SUMS.txt
+          mv SHA256SUMS.txt installers/SHA256SUMS.txt
+          cat > release-notes.md <<'NOTES'
+          Adhan Desk brings mosque prayer times and full adhan playback to the desktop.
+
+          Downloads: Windows x64 installer (.exe), macOS Intel/Apple Silicon installers (.dmg), and Linux x64 (.AppImage). SHA256SUMS.txt contains file checksums.
+
+          This is an unsigned, unnotarized preview. Windows playback and scheduling have been exercised locally. The macOS and Linux installers pass automated tests and packaging; their speaker output, tray behavior, and login startup still need manual testing on those systems.
+
+          The computer must be on, awake, and signed in, with working speakers. Local recordings play offline using cached dated prayer times; refresh the mosque timetable regularly. YouTube mode needs internet and may be blocked by the provider.
+
+          Check the included recording attribution and license before redistributing audio. Report reproducible problems through the repository's bug report form.
+          NOTES
+          printf '\nBuilt from commit `%s`.\n' "$GITHUB_SHA" >> release-notes.md
+          gh release create "$tag" installers/* \
+            --repo "$GH_REPO" \
+            --target "$GITHUB_SHA" \
+            --title "Adhan Desk $tag (preview)" \
+            --notes-file release-notes.md \
+            --prerelease \
+            --latest=false
