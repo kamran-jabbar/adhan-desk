@@ -1253,3 +1253,44 @@ main {
 .audio-credit .text-button {
   font-size:10px
 }
+.audio-subsection {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  margin: 4px 0 20px;
+}
+
+.audio-subsection h3 {
+  font: 400 19px Georgia, serif;
+  margin: 0 0 9px;
+}
+
+.audio-subsection .fajr-audio-name {
+  color: #829578;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  margin: 0 0 11px;
+}
+
+.fajr-audio-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+}
+
+.fajr-audio-actions .button {
+  padding: 8px 11px;
+  min-height: 32px;
+}
+
+.fajr-audio-actions .text-button {
+  font-size: 10px;
+}
+
+.audio-panel .fajr-summary {
+  color: #749066;
+  font-size: 10px;
+  line-height: 1.6;
+  margin: -8px 0 17px;
+  overflow-wrap: anywhere;
+}

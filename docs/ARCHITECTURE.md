@@ -15,6 +15,8 @@ src/
     services/scheduler.cjs           Timezone-aware event construction and due-event selection
     services/server.cjs              Loopback UI and local-audio delivery
     services/PlaybackService.cjs     Player lifecycle and playback reporting
+    services/SystemAudioService.cjs Temporary output unmute/volume and restoration
+    services/WindowsAudio.ps1       Windows CoreAudio helper, unpacked for execution
     services/DesktopService.cjs      Tray, login startup and power integration
     preload.cjs                     Narrow renderer-to-main bridge
     player-preload.cjs              Narrow player-to-main bridge
@@ -50,7 +52,7 @@ flowchart LR
 
 The main controller owns application orchestration: refresh timing and retry backoff, scheduler ticks, IPC handlers and response to lifecycle events. It coordinates services rather than implementing DOM behavior or embedding provider parsing.
 
-The main app model stores settings, the dated timetable, played-attempt IDs, recent logs and local recording state. It also owns the derived event cache so repeated UI snapshots do not rebuild the same schedule. The settings model validates complete candidate changes before state is committed. A settings change that affects the OS or player is applied through the appropriate service.
+The main app model stores settings, the dated timetable, played-attempt IDs, recent logs and regular/Fajr local recording state. It also owns the derived event cache so repeated UI snapshots do not rebuild the same schedule. The settings model validates complete candidate changes before state is committed. A settings change that affects the OS or player is applied through the appropriate service.
 
 The scheduler is independent of Electron. It builds explicit prayer events in the mosque's timezone, selects due events and applies the late-playback window. Provider adapters supply wall-clock prayer times; they do not decide when audio starts.
 
@@ -108,6 +110,24 @@ Keep redistributable recordings under `assets/` and include their license notice
 
 Test the complete recording through its natural end, stop it manually, and check imported-file and missing-file behavior. Do not commit personal imported recordings, application profiles or unrelated copyrighted audio.
 
+The separate Fajr import is stored in the user's profile, not in public assets. Use it only for Fajr and retain the regular-recording fallback if it is absent or missing. The bundled regular recording is not presented as a separate Fajr version. Exercise regular and Fajr import, selection, test playback and fallback when changing this path.
+
+## System sound control
+
+`SystemAudioService.cjs` owns temporary changes to system-output mute and volume. `unmuteForAdhan` defaults to `false` in public settings. When enabled for playback, the service snapshots the prior state, unmutes, raises output volume to at least 35% and returns a restoration lease. Release that lease on normal completion, manual stop, playback failure and app shutdown. Prevent overlapping playback transitions from restoring an older lease over an active one. Restoration is best effort, especially after a process or operating-system failure.
+
+| Platform | Backend | Dependency or limit |
+| --- | --- | --- |
+| Windows | CoreAudio via `WindowsAudio.ps1` | Built-in Windows PowerShell; helper must be outside ASAR for execution |
+| macOS | `/usr/bin/osascript` | Built-in commands control the current default output; no captured output-device identity |
+| Linux | `pactl`, then `wpctl` when `pactl` is unavailable | Requires a compatible PulseAudio/PipeWire or WirePlumber setup and command availability |
+
+Windows and Linux backends retain the captured device identity for restoration even if the default output changes. macOS restoration applies to the default output at that moment. Report unsupported commands and backend errors clearly; do not report successful sound control when it failed. Ordinary player playback may still proceed after a logged system-control failure.
+
+Package `WindowsAudio.ps1` with `asarUnpack` and resolve its real unpacked path for child-process execution. Keep command invocation structured, with argument validation and bounded timeouts. Do not replace this service with shell commands assembled from user input.
+
+The app-volume slider remains independent of system output volume. This service cannot guarantee sound when physical speakers are off, a device is disconnected, a hardware mute is active or the app's audio session is separately muted. Test snapshot/restore logic with mocked command runners and perform native checks for completion, stop, error, rapid replacement and device changes. Automated muted player tests cannot prove audible output.
+
 ## Test and package
 
 ```sh
@@ -116,7 +136,7 @@ pnpm test
 pnpm start
 ```
 
-`node:test` covers provider parsing, timezone scheduling, the local server and models without requiring an Electron UI. Native integration checks still need Electron: actual playback completion, one scheduled event, persistence/restart deduplication, close-to-tray behavior, login startup and idle-sleep settings.
+`node:test` covers provider parsing, timezone scheduling, the local server, models and system-audio command logic without requiring an Electron UI. Native integration checks still need Electron: regular/Fajr playback completion, one scheduled event, persistence/restart deduplication, close-to-tray behavior, login startup, idle-sleep settings and system mute/volume restoration.
 
 For isolated development profiles, set `ADHAN_DESK_USER_DATA` to a temporary directory. `ADHAN_DESK_TEST_MODE=1` disables automatic prayer playback and mutes player windows. Use these intentionally in automated checks and do not ship test profiles in packages.
 

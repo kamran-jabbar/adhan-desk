@@ -126,6 +126,7 @@
                 <h2>Full adhan.<br>Familiar voice.</h2>
               </div>
               <p id="audio-description">An included full adhan recording, ready for automatic prayer-time playback.</p>
+              <p id="fajr-summary" class="fajr-summary" hidden>Fajr uses a separate recording.</p>
               <div class="audio-actions">
                 <button class="button primary" id="quick-import-audio" hidden>Choose adhan recording</button>
                 <button class="button primary" id="test-audio">
@@ -199,12 +200,22 @@
             </form>
             <button class="text-button recording-link" id="recording-link">Open selected YouTube recording ↗</button>
             <p class="youtube-warning" id="youtube-warning" hidden>The original recording you shared blocked embedded playback during verification. Use the included adhan recording, a personal audio file, or a different YouTube video that allows embedding.</p>
+            <section class="audio-subsection" aria-labelledby="fajr-audio-heading">
+              <h3 id="fajr-audio-heading">Fajr recording</h3>
+              <p id="fajr-audio-label" class="fajr-audio-name">Uses your regular recording</p>
+              <div class="fajr-audio-actions">
+                <button class="button secondary" id="import-fajr-audio">Choose Fajr file</button>
+                <button class="button secondary" id="test-fajr-audio" disabled>Test Fajr</button>
+                <button class="text-button" id="clear-fajr-audio" hidden>Use regular recording</button>
+              </div>
+              <p class="fine-print" id="fajr-audio-guidance">Fajr uses your regular adhan unless you choose a separate recording with the extra Fajr lines.</p>
+            </section>
             <div class="volume-row">
               <label for="volume">Volume <span id="volume-label">75%</span>
               </label>
               <input type="range" id="volume" min="0" max="100" step="1">
             </div>
-            <p class="fine-print">The full recording plays once at each enabled prayer. System volume and mute still apply.</p>
+            <p class="fine-print" id="audio-volume-note">The full recording plays once at each enabled prayer. System volume and mute still apply.</p>
           </section>
           <section class="panel settings-panel">
             <div class="eyebrow">MAKE IT YOUR DAILY RHYTHM</div>
@@ -231,6 +242,15 @@
                 <small>Prevent idle sleep while adhan is enabled.</small>
               </span>
               <input type="checkbox" id="prevent-sleep" class="switch-input">
+              <span class="switch-track" aria-hidden="true">
+              </span>
+            </label>
+            <label class="setting-toggle">
+              <span>
+                <strong>Temporarily unmute for adhan</strong>
+                <small>Unmute the system output and use at least 35% volume; restore previous settings after playback. Physical speakers must be on.</small>
+              </span>
+              <input type="checkbox" id="unmute-for-adhan" class="switch-input">
               <span class="switch-track" aria-hidden="true">
               </span>
             </label>

@@ -39,6 +39,7 @@ export class AppView {
     if (!busy && this.model?.state) {
       const { settings, status } = this.model.state;
       if (buttonId === 'test-audio') button.disabled = status.playback?.state === 'loading' || (settings.playbackMode === 'local' && !settings.audioName);
+      if (buttonId === 'test-fajr-audio') button.disabled = status.playback?.state === 'loading' || !settings.fajrAudioName;
       if (['sync-button', 'save-source'].includes(buttonId)) button.disabled = status.syncing;
     }
   }
@@ -133,9 +134,18 @@ export class AppView {
     this.element('scheduler-label').textContent = settings.enabled ? 'Adhan enabled' : 'Adhan paused';
     this.element('autostart').checked = !!settings.autoStart;
     this.element('prevent-sleep').checked = !!settings.preventSleep;
+    this.element('unmute-for-adhan').checked = !!settings.unmuteForAdhan;
     this.element('volume').value = settings.volume ?? 75;
     this.renderVolume(settings.volume ?? 75);
     this.element('audio-file-label').textContent = settings.audioName === 'Default adhan' ? 'Included adhan recording · works offline' : settings.audioName || 'Restore the included adhan or choose a personal recording';
+    this.element('fajr-audio-label').textContent = settings.fajrAudioName || 'Uses your regular recording';
+    this.element('clear-fajr-audio').hidden = !settings.fajrAudioName;
+    this.element('fajr-audio-guidance').textContent = settings.fajrAudioName
+      ? 'Fajr will use this recording. Test it to check the dawn-specific “Prayer is better than sleep” lines.'
+      : 'Fajr uses your regular adhan unless you choose a separate recording with the extra Fajr lines.';
+    this.element('audio-volume-note').textContent = settings.unmuteForAdhan
+      ? 'The full recording plays once per enabled prayer. System output is temporarily unmuted at a minimum 35% volume, then restored after playback.'
+      : 'The full recording plays once at each enabled prayer. System volume and mute still apply.';
     this.element('youtube-warning').hidden = !settings.youtubeUrl?.includes('5eApyXlK0RA');
     this.all('[name=audio-mode]').forEach((input) => { input.checked = input.value === settings.playbackMode; });
     const container = this.element('prayer-toggles');
@@ -169,6 +179,9 @@ export class AppView {
     this.element('quick-import-audio').hidden = !local || !!settings.audioName;
     this.element('stop-audio').hidden = !(playing || preparing);
     this.element('test-audio').textContent = preparing ? 'Preparing audio…' : playing ? '▷  Play again' : '▷  Test adhan';
+    this.element('test-fajr-audio').disabled = preparing || !settings.fajrAudioName;
+    this.element('fajr-summary').hidden = !settings.fajrAudioName;
+    this.element('fajr-summary').textContent = settings.fajrAudioName ? `Fajr has its own recording: ${settings.fajrAudioName}` : '';
   }
 
   renderReadiness() {
@@ -177,7 +190,9 @@ export class AppView {
     const local = settings.playbackMode === 'local';
     const playback = status.playback;
     let title = 'Ready on your desktop';
-    let description = 'Close this window to keep adhan running in the background. Keep your computer awake and speakers unmuted.';
+    let description = settings.unmuteForAdhan
+      ? 'Close this window to keep adhan running in the background. Keep your computer awake and physical speakers on; system output will be unmuted for playback.'
+      : 'Close this window to keep adhan running in the background. Keep your computer awake and speakers unmuted.';
     if (playback?.state === 'error') {
       title = 'Audio needs attention';
       description = playback.error || playback.message || 'The recording could not play. Try Test adhan, or choose a local recording in Preferences.';
@@ -198,7 +213,9 @@ export class AppView {
       description = this.model.hasEnabledPrayer() ? 'Refresh the mosque timetable below. Automatic adhan needs upcoming prayer times.' : 'Choose the prayers you want to hear in Preferences.';
     } else if (settings.preventSleep) {
       title = 'Keeping your computer awake';
-      description = 'Idle sleep prevention is enabled. Keep your speakers connected and unmuted.';
+      description = settings.unmuteForAdhan
+        ? 'Idle sleep prevention is enabled. System output will be unmuted for playback; physical speakers must be on.'
+        : 'Idle sleep prevention is enabled. Keep your speakers connected and unmuted.';
     }
     this.element('readiness-title').textContent = title;
     this.element('readiness-description').textContent = description;

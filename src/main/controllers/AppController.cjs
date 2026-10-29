@@ -25,7 +25,7 @@ class AppController {
   async start() {
     this.model.load({ testMode: this.testMode });
     this.registerIPC();
-    await this.desktop.start(() => this.model.audioPath, {
+    await this.desktop.start(() => this.player?.audioPath || this.model.audioPath, {
       onServerReady: base => {
         this.player = new PlaybackService(base, {
           log: (message, level) => this.model.log(message, level),
@@ -79,9 +79,9 @@ class AppController {
     if (merged.autoStart !== latest.autoStart) this.desktop.setAutoStart(merged.autoStart);
     this.model.settings = merged; this.model.persist(); this.broadcast(); return this.snapshot();
   }
-  async importAudio() {
+  async importAudio(forFajr = false) {
     const { canceled, filePaths } = await dialog.showOpenDialog(this.desktop.window, {
-      title: 'Choose your full adhan recording', properties: ['openFile'],
+      title: forFajr ? 'Choose your full Fajr adhan recording' : 'Choose your full adhan recording', properties: ['openFile'],
       filters: [{ name: 'Audio recordings', extensions: ['mp3', 'wav', 'ogg', 'm4a', 'flac'] }]
     });
     if (canceled || !filePaths[0]) return this.snapshot();
@@ -90,24 +90,31 @@ class AppController {
     const size = fs.statSync(source).size;
     if (size > 250 * 1024 * 1024) throw new Error('Choose a recording smaller than 250 MB.');
     if (size === 0) throw new Error('This audio file is empty. Choose a full adhan recording.');
-    this.player.stop('Stopped to change the recording');
-    const destination = path.join(this.app.getPath('userData'), 'recordings', 'adhan' + extension);
+    await this.player.stop('Stopped to change the recording');
+    const destination = path.join(this.app.getPath('userData'), 'recordings', (forFajr ? 'fajr-adhan' : 'adhan') + extension);
     fs.mkdirSync(path.dirname(destination), { recursive: true });
     if (path.resolve(source) !== path.resolve(destination)) fs.copyFileSync(source, destination);
-    this.model.audioPath = destination;
-    this.model.settings.audioName = path.basename(source); this.model.settings.playbackMode = 'local';
-    this.model.log('Local recording saved for offline playback.'); this.model.persist(); this.broadcast(); return this.snapshot();
+    if (forFajr) { this.model.fajrAudioPath = destination; this.model.settings.fajrAudioName = path.basename(source); }
+    else { this.model.audioPath = destination; this.model.settings.audioName = path.basename(source); this.model.settings.playbackMode = 'local'; }
+    this.model.log(`${forFajr ? 'Fajr' : 'Local'} recording saved for offline playback.`); this.model.persist(); this.broadcast(); return this.snapshot();
   }
-  useDefaultAudio() {
+  async useDefaultAudio() {
     if (!fs.existsSync(this.paths.defaultAudioPath)) throw new Error('The included recording is missing. Reinstall Adhan Desk to restore it.');
-    this.player.stop('Stopped to change the recording');
+    await this.player.stop('Stopped to change the recording');
     this.model.audioPath = this.paths.defaultAudioPath; this.model.settings.audioName = 'Default adhan'; this.model.settings.playbackMode = 'local';
     this.model.log('Included adhan recording selected.'); this.model.persist(); this.broadcast(); return this.snapshot();
   }
-  async play(prayer, eventId = null) {
+  async clearFajrAudio() {
+    await this.player.stop('Stopped to change the recording');
+    this.model.fajrAudioPath = null; this.model.settings.fajrAudioName = null;
+    this.model.log('Fajr will use the regular adhan recording.'); this.model.persist(); this.broadcast(); return this.snapshot();
+  }
+  async play(prayer, eventId = null, isTest = false) {
     const settings = this.model.settings;
-    await this.player.start({ prayer, eventId, mode: settings.playbackMode, volume: settings.volume,
-      videoId: youtubeId(settings.youtubeUrl), audioName: settings.audioName, audioPath: this.model.audioPath });
+    const separateFajr = prayer === 'Fajr' && !!this.model.fajrAudioPath;
+    await this.player.start({ prayer, eventId, mode: separateFajr ? 'local' : settings.playbackMode, volume: settings.volume,
+      videoId: youtubeId(settings.youtubeUrl), audioName: separateFajr ? settings.fajrAudioName : settings.audioName,
+      audioPath: separateFajr ? this.model.fajrAudioPath : this.model.audioPath, isTest, unmuteForAdhan: settings.unmuteForAdhan });
     return this.snapshot();
   }
   async tick() {
@@ -137,9 +144,12 @@ class AppController {
     handle('saveSettings', patch => this.saveSettings(patch));
     handle('sync', () => this.sync());
     handle('importAudio', () => this.importAudio());
+    handle('importFajrAudio', () => this.importAudio(true));
+    handle('clearFajrAudio', () => this.clearFajrAudio());
     handle('useDefaultAudio', () => this.useDefaultAudio());
     handle('testAudio', () => this.play('Test'));
-    handle('stopAudio', () => { this.player.stop(); return this.snapshot(); });
+    handle('testFajrAudio', () => this.play('Fajr', null, true));
+    handle('stopAudio', async () => { await this.player.stop(); return this.snapshot(); });
     handle('openSource', () => shell.openExternal(validateSource(this.model.settings.sourceUrl)));
     handle('openRecording', () => shell.openExternal(`https://www.youtube.com/watch?v=${youtubeId(this.model.settings.youtubeUrl)}`));
     handle('openAudioCredits', () => shell.openExternal(AUDIO_CREDITS));
@@ -148,8 +158,10 @@ class AppController {
     ipcMain.handle('player:stop', event => { if (this.player?.isSender(event)) this.player.stop(); });
     ipcMain.on('player:report', (event, data) => { if (this.player?.isSender(event)) this.player.report(data); });
   }
-  dispose() {
+  async dispose() {
+    this.desktop.quitting = true;
     this.intervals.forEach(clearInterval);
+    await this.player?.stop('Stopped');
     try { this.model.persist(); } catch {}
     this.desktop.dispose();
   }

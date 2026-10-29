@@ -21,7 +21,7 @@ window.onYouTubeIframeAPIReady = () => {
 };
 window.adhanPlayer.getConfig().then(c => {
   config = c;
-  document.getElementById('title').textContent = c.prayer === 'Test' ? 'Test your adhan' : `Time for ${c.prayer}`;
+  document.getElementById('title').textContent = c.prayer === 'Test' ? 'Test your adhan' : c.isTest ? `Test your ${c.prayer} adhan` : `Time for ${c.prayer}`;
   if (c.mode === 'local') {
     document.getElementById('youtube').hidden = true;
     const audio = document.getElementById('audio');

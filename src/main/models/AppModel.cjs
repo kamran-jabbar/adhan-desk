@@ -5,7 +5,7 @@ const { buildEvents, nextEvent } = require('../services/scheduler.cjs');
 const { createDefaults, validatePatch } = require('./SettingsModel.cjs');
 
 const HISTORY_MS = 10 * 86400000;
-const SAVED_FIELDS = ['sourceUrl', 'enabled', 'enabledPrayers', 'volume', 'playbackMode', 'autoStart', 'preventSleep', 'youtubeUrl'];
+const SAVED_FIELDS = ['sourceUrl', 'enabled', 'enabledPrayers', 'volume', 'playbackMode', 'autoStart', 'preventSleep', 'unmuteForAdhan', 'youtubeUrl'];
 function audioExists(file) {
   try { return typeof file === 'string' && fs.statSync(file).isFile() && fs.statSync(file).size > 0; }
   catch { return false; }
@@ -16,6 +16,7 @@ class AppModel {
     this.userDataPath = userDataPath; this.defaultAudioPath = defaultAudioPath; this.isPackaged = isPackaged;
     this.settings = createDefaults(isPackaged); this.timetable = null; this.played = {}; this.logs = [];
     this.audioPath = audioExists(defaultAudioPath) ? defaultAudioPath : null;
+    this.fajrAudioPath = null;
     this.firstRun = true; this.status = { syncing: false, lastError: null, playback: null, logs: this.logs };
     this.cachedTimetable = null; this.cachedKey = ''; this.cachedEvents = [];
   }
@@ -26,6 +27,7 @@ class AppModel {
   }
   load({ testMode = false } = {}) {
     this.firstRun = !fs.existsSync(this.stateFile);
+    this.fajrAudioPath = null; this.settings.fajrAudioName = null;
     try {
       const data = JSON.parse(fs.readFileSync(this.stateFile, 'utf8'));
       if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Invalid saved state.');
@@ -41,6 +43,11 @@ class AppModel {
       if (this.audioPath && this.audioPath !== this.defaultAudioPath) {
         this.settings.audioName = typeof saved.audioName === 'string' && saved.audioName.length <= 240 ? saved.audioName : path.basename(this.audioPath);
       }
+      if (audioExists(data.fajrAudioPath)) {
+        this.fajrAudioPath = data.fajrAudioPath;
+        this.settings.fajrAudioName = typeof saved.fajrAudioName === 'string' && saved.fajrAudioName.trim() && saved.fajrAudioName.length <= 240
+          ? saved.fajrAudioName : path.basename(this.fajrAudioPath);
+      } else if (data.fajrAudioPath) this.log('The separate Fajr recording is missing. Fajr will use the regular adhan recording.', 'warning');
       if (data.timetable) {
         try { buildEvents(data.timetable, this.settings.enabledPrayers); this.timetable = data.timetable; }
         catch { this.log('The cached timetable is invalid. Refresh mosque times to continue.', 'warning'); }
@@ -66,7 +73,7 @@ class AppModel {
     this.played = Object.fromEntries(Object.entries(this.played).filter(([, value]) => Number.isFinite(value) && value >= cutoff));
     const temporary = this.stateFile + '.tmp';
     fs.writeFileSync(temporary, JSON.stringify({ version: 1, settings: this.settings, timetable: this.timetable,
-      played: this.played, audioPath: this.audioPath, logs: this.logs }, null, 2), 'utf8');
+      played: this.played, audioPath: this.audioPath, fajrAudioPath: this.fajrAudioPath, logs: this.logs }, null, 2), 'utf8');
     fs.renameSync(temporary, this.stateFile);
   }
   getEvents() {

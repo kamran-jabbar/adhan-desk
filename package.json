@@ -1,7 +1,7 @@
 {
   "name": "adhan-desk",
   "productName": "Adhan Desk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Your mosque's prayer times and full adhan on your desktop.",
   "author": "Adhan Desk contributors",
   "license": "MIT",
@@ -26,6 +26,7 @@
     "productName": "Adhan Desk",
     "directories": {"output": "dist"},
     "files": ["src/**/*", "assets/**/*", "package.json", "LICENSE", "docs/AUDIO-LICENSE.md"],
+    "asarUnpack": ["src/main/services/system-audio/**/*"],
     "win": {"target": "nsis", "signAndEditExecutable": false},
     "nsis": {"oneClick": false, "perMachine": false, "allowToChangeInstallationDirectory": true},
     "mac": {"target": "dmg", "category": "public.app-category.lifestyle"},

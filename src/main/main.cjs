@@ -18,7 +18,12 @@ else {
   app.on('second-instance', () => controller.desktop.show());
   app.on('activate', () => controller.desktop.show());
   app.on('window-all-closed', () => {});
-  app.on('before-quit', () => controller.dispose());
+  let shutdownStarted = false;
+  app.on('before-quit', event => {
+    if (shutdownStarted) return;
+    event.preventDefault(); shutdownStarted = true;
+    controller.dispose().finally(() => app.quit());
+  });
   app.whenReady().then(() => controller.start()).catch(error => {
     dialog.showErrorBox('Adhan Desk could not start', error.stack || error.message);
     controller.desktop.quit();

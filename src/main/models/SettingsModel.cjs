@@ -4,14 +4,14 @@ const { normalizeMosqueUrl } = require('../services/mawaqit.cjs');
 
 const DEFAULT_SOURCE = 'https://mawaqit.net/en/hervanta-new-mosque-tampere-33720-finland';
 const RECORDING = 'https://www.youtube.com/watch?v=5eApyXlK0RA';
-const PATCH_FIELDS = new Set(['sourceUrl', 'enabled', 'enabledPrayers', 'volume', 'playbackMode', 'autoStart', 'preventSleep', 'youtubeUrl']);
+const PATCH_FIELDS = new Set(['sourceUrl', 'enabled', 'enabledPrayers', 'volume', 'playbackMode', 'autoStart', 'preventSleep', 'unmuteForAdhan', 'youtubeUrl']);
 
 function createDefaults(isPackaged = false) {
   return {
     sourceUrl: DEFAULT_SOURCE, enabled: true,
     enabledPrayers: Object.fromEntries(PRAYERS.map(prayer => [prayer, true])),
     volume: 75, playbackMode: 'local', autoStart: !!isPackaged,
-    preventSleep: false, audioName: 'Default adhan', youtubeUrl: RECORDING,
+    preventSleep: false, unmuteForAdhan: false, audioName: 'Default adhan', fajrAudioName: null, youtubeUrl: RECORDING,
   };
 }
 
@@ -43,7 +43,7 @@ function validatePatch(patch, current, { hasAudio = false } = {}) {
   for (const key of Object.keys(patch)) {
     if (!PATCH_FIELDS.has(key)) throw new Error(`Unsupported setting: ${key}`);
     const value = patch[key];
-    if (['enabled', 'autoStart', 'preventSleep'].includes(key)) {
+    if (['enabled', 'autoStart', 'preventSleep', 'unmuteForAdhan'].includes(key)) {
       if (typeof value !== 'boolean') throw new Error(`Invalid setting: ${key}`);
       result[key] = value;
     } else if (key === 'volume') {

@@ -60,6 +60,7 @@ export class AppController {
     on('enabled-toggle', 'change', (event) => this.perform(null, () => this.api.saveSettings({ enabled: event.target.checked })));
     on('autostart', 'change', (event) => this.perform(null, () => this.api.saveSettings({ autoStart: event.target.checked })));
     on('prevent-sleep', 'change', (event) => this.perform(null, () => this.api.saveSettings({ preventSleep: event.target.checked })));
+    on('unmute-for-adhan', 'change', (event) => this.perform(null, () => this.api.saveSettings({ unmuteForAdhan: event.target.checked })));
     on('volume', 'input', (event) => this.view.renderVolume(event.target.value));
     on('volume', 'change', (event) => this.perform(null, () => this.api.saveSettings({ volume: Number(event.target.value) })));
     this.view.all('[name=audio-mode]').forEach((input) => input.addEventListener('change', () => {
@@ -75,6 +76,8 @@ export class AppController {
       ['sync-button', 'sync'], ['retry-button', 'sync'],
       ['import-audio', 'importAudio'], ['quick-import-audio', 'importAudio'],
       ['default-audio', 'useDefaultAudio', 'Included adhan recording restored.'],
+      ['import-fajr-audio', 'importFajrAudio'],
+      ['test-fajr-audio', 'testFajrAudio'], ['clear-fajr-audio', 'clearFajrAudio'],
       ['test-audio', 'testAudio'], ['stop-audio', 'stopAudio'],
       ['source-link', 'openSource'], ['recording-link', 'openRecording'],
       ['audio-credits', 'openAudioCredits'],

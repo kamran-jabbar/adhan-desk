@@ -28,6 +28,9 @@ test('first run selects bundled full recording and packaged login default', t =>
   assert.equal(model.settings.audioName, 'Default adhan');
   assert.equal(model.settings.autoStart, true);
   assert.equal(model.audioPath, model.defaultAudioPath);
+  assert.equal(model.fajrAudioPath, null);
+  assert.equal(model.settings.fajrAudioName, null);
+  assert.equal(model.settings.unmuteForAdhan, false);
   assert.equal(createDefaults(false).autoStart, false);
 });
 
@@ -49,9 +52,10 @@ test('patch validation returns only changed fields and never captures stale sett
 
 test('strict settings validation rejects unsafe and ambiguous values', () => {
   const current = createDefaults();
-  for (const patch of [null, [], { enabled: 1 }, { volume: NaN }, { volume: -1 }, { volume: 101 },
+  for (const patch of [null, [], { enabled: 1 }, { unmuteForAdhan: 'true' }, { volume: NaN }, { volume: -1 }, { volume: 101 },
     { enabledPrayers: { Sunrise: true } }, { enabledPrayers: { Fajr: 'yes' } }, { enabledPrayers: [] },
     { playbackMode: 'remote' }, { audioPath: 'secret.mp3' }, { audioName: 'override' },
+    { fajrAudioPath: 'secret-fajr.mp3' }, { fajrAudioName: 'override' },
     { sourceUrl: 'https://mawaqit.net.attacker.example/en/mosque' }]) {
     assert.throws(() => validatePatch(patch, current, { hasAudio: true }));
   }
@@ -73,6 +77,7 @@ test('atomic state persists attempted prayers before playback and trims old hist
   const model = fixture(t).load();
   model.timetable = timetable();
   model.played.old = Date.now() - 11 * 86400000;
+  model.settings.unmuteForAdhan = validatePatch({ unmuteForAdhan: true }, model.settings, { hasAudio: true }).unmuteForAdhan;
   const event = model.getEvents()[0];
   model.markAttempt(event);
   const saved = JSON.parse(fs.readFileSync(model.stateFile, 'utf8'));
@@ -82,6 +87,7 @@ test('atomic state persists attempted prayers before playback and trims old hist
   const restored = new AppModel({ userDataPath: model.userDataPath, defaultAudioPath: model.defaultAudioPath }).load();
   assert.equal(restored.firstRun, false);
   assert.equal(restored.played[event.id], saved.played[event.id]);
+  assert.equal(restored.settings.unmuteForAdhan, true);
 });
 
 test('a missing imported recording falls back to bundled audio with a visible activity warning', t => {
@@ -93,6 +99,41 @@ test('a missing imported recording falls back to bundled audio with a visible ac
   assert.equal(restored.audioPath, model.defaultAudioPath);
   assert.equal(restored.settings.audioName, 'Default adhan');
   assert.ok(restored.logs.some(log => /missing.*bundled/i.test(log.message)));
+});
+
+test('a separate Fajr recording and its display name persist without replacing the regular recording', t => {
+  const model = fixture(t).load();
+  const fajr = path.join(path.dirname(model.defaultAudioPath), 'fajr.mp3');
+  fs.writeFileSync(fajr, Buffer.from([4, 5, 6]));
+  model.fajrAudioPath = fajr;
+  model.settings.fajrAudioName = 'My Fajr recording';
+  model.persist();
+  const saved = JSON.parse(fs.readFileSync(model.stateFile, 'utf8'));
+  assert.equal(saved.fajrAudioPath, fajr);
+  const restored = new AppModel({ userDataPath: model.userDataPath, defaultAudioPath: model.defaultAudioPath }).load();
+  assert.equal(restored.fajrAudioPath, fajr);
+  assert.equal(restored.settings.fajrAudioName, 'My Fajr recording');
+  assert.equal(restored.audioPath, model.defaultAudioPath);
+  assert.equal(restored.snapshot('win32', '0.1.1').settings.fajrAudioName, 'My Fajr recording');
+});
+
+test('an unavailable Fajr override falls back to the unchanged regular recording', t => {
+  const model = fixture(t).load();
+  const regular = path.join(path.dirname(model.defaultAudioPath), 'regular.mp3');
+  fs.writeFileSync(regular, Buffer.from([7, 8, 9]));
+  model.audioPath = regular;
+  model.settings.audioName = 'Regular recording';
+  model.fajrAudioPath = path.join(model.userDataPath, 'missing-fajr.mp3');
+  model.settings.fajrAudioName = 'Missing Fajr recording';
+  model.persist();
+  const restored = new AppModel({ userDataPath: model.userDataPath, defaultAudioPath: model.defaultAudioPath }).load();
+  assert.equal(restored.fajrAudioPath, null);
+  assert.equal(restored.settings.fajrAudioName, null);
+  assert.equal(restored.audioPath, regular);
+  assert.equal(restored.settings.audioName, 'Regular recording');
+  assert.ok(restored.logs.some(log => /Fajr recording is missing.*regular adhan/i.test(log.message)));
+  restored.persist();
+  assert.equal(JSON.parse(fs.readFileSync(restored.stateFile, 'utf8')).fajrAudioPath, null);
 });
 
 test('event cache follows timetable replacement and prayer selection', t => {

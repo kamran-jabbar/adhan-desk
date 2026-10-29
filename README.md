@@ -14,6 +14,7 @@ Use a preview installer from [Releases](https://github.com/kamran-jabbar/adhan-d
 2. Use **Test adhan**, adjust the volume and confirm that your speakers are audible.
 3. Select the prayers you want. A fresh installation enables all five prayers and includes the full local recording, so no audio download is required.
 4. Check **Start at login** and **Keep computer awake** in settings. Login startup is enabled on the first launch of a packaged app; keep-awake is optional. Existing saved preferences are preserved.
+5. Optionally import a separate **Fajr recording** and enable **Unmute for adhan** if you want the app to adjust system sound during playback.
 
 Closing the main window leaves the app running in the system tray or menu bar. The tray menu can reopen the window, pause automatic adhan, stop playback or quit. **Quit** stops the scheduler.
 
@@ -24,17 +25,25 @@ On macOS, copy the app into Applications before its first launch. On Linux, put 
 - Mosque-published Fajr, Dhuhr, Asr, Maghrib and Isha times, using the mosque's timezone.
 - Full local adhan playback, with a bundled recording of approximately 87 seconds.
 - Custom local recording import and optional configurable YouTube playback.
+- Separate imported Fajr recording, with the regular recording used when none is selected.
 - Per-prayer switches, volume, pause, stop, next-prayer countdown and activity log.
+- Optional system unmute and a minimum 35% system output level during adhan, with previous sound settings restored afterward.
 - Background tray operation, login startup and optional idle-sleep prevention.
 - Up to seven dated timetable days cached for short internet outages, with duplicate-playback protection.
 
-The included recording is **“The Adhan - Muslim Call to Prayer - Aaqib Azeez.mp3” by Atcovi**, from Wikimedia Commons, under **CC BY-SA 4.0**. It is distributed unchanged. See [audio attribution and license](docs/AUDIO-LICENSE.md). The same recording is used for all five prayers; separate Fajr audio is not yet supported.
+The included recording is **“The Adhan - Muslim Call to Prayer - Aaqib Azeez.mp3” by Atcovi**, from Wikimedia Commons, under **CC BY-SA 4.0**. It is distributed unchanged. See [audio attribution and license](docs/AUDIO-LICENSE.md).
+
+You can import a separate full Fajr recording containing the additional Fajr wording. No separate Fajr recording is bundled; until one is imported, Fajr uses the regular recording. Importing a personal recording does not grant redistribution rights to it.
 
 Import MP3, WAV, Ogg, M4A or FLAC to use another full recording. Codec support depends on Electron and the operating system. YouTube mode opens a visible embedded player and needs an internet connection and an embeddable video. The app reports playback restrictions and connection failures; local audio is the dependable option for automatic playback.
 
 ## Reliable playback
 
 The computer must be powered on, logged in and awake, with Adhan Desk running and an audible sound output. Keep-awake requests help prevent idle application suspension while enabled; they do not power on a computer, wake it from shutdown or override every power policy. The screen can turn off while audio remains available.
+
+**Unmute for adhan** is off by default in a fresh public installation. When enabled, the app attempts to unmute the system output and raise its volume to at least 35% for playback. It keeps a snapshot of the previous mute and volume settings and restores them when playback finishes or is stopped. The app's own playback-volume control still applies. This temporarily changes the system output level for other computer sounds too.
+
+System sound control uses Windows CoreAudio, built-in `osascript` on macOS, or `pactl`/`wpctl` on supported Linux audio setups. On macOS, restoration applies to the output that is default at restoration time; avoid switching outputs during playback if exact restoration matters. Control failures are reported and restoration is best effort. The option cannot turn on physical speakers, reconnect a device, undo a hardware mute or guarantee that a separately muted app/session is audible.
 
 Prayers more than 90 seconds late are skipped after resume. The app records an attempt before playback to prevent duplicate calls after a crash or restart. If audio fails, check the activity log and run an audio test; the app does not repeatedly retry the same prayer.
 
