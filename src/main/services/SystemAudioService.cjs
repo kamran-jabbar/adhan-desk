@@ -99,7 +99,7 @@ class SystemAudioService {
     return this.serial(async () => {
       if (!this.original) {
         const original = await this.read();
-        const target = { ...original, volume: Math.max(0.35, original.volume), muted: false };
+        const target = { ...original, volume: 1, muted: false };
         if (original.channels) target.channels = original.channels.map(value => original.volume ? Math.round(value * target.volume / original.volume) : Math.round(target.volume * 65536));
         try { await this.write(target); }
         catch (error) {

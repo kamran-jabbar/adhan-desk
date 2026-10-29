@@ -114,7 +114,7 @@ The separate Fajr import is stored in the user's profile, not in public assets. 
 
 ## System sound control
 
-`SystemAudioService.cjs` owns temporary changes to system-output mute and volume. `unmuteForAdhan` defaults to `false` in public settings. When enabled for playback, the service snapshots the prior state, unmutes, raises output volume to at least 35% and returns a restoration lease. Release that lease on normal completion, manual stop, playback failure and app shutdown. Prevent overlapping playback transitions from restoring an older lease over an active one. Restoration is best effort, especially after a process or operating-system failure.
+`SystemAudioService.cjs` owns temporary changes to system-output mute and volume. `unmuteForAdhan` defaults to `false` in public settings. When enabled for playback, the service snapshots the prior mute and volume state, completes the unmute and sets output volume to exactly 100%, then returns a restoration lease. Await that operation before starting the player. Release the lease on normal completion, manual stop, playback failure and app shutdown to restore the prior volume and mute state. Prevent overlapping playback transitions from restoring an older lease over an active one. Restoration is best effort, especially after a process or operating-system failure.
 
 | Platform | Backend | Dependency or limit |
 | --- | --- | --- |

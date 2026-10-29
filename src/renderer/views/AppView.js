@@ -144,7 +144,7 @@ export class AppView {
       ? 'Fajr will use this recording. Test it to check the dawn-specific “Prayer is better than sleep” lines.'
       : 'Fajr uses your regular adhan unless you choose a separate recording with the extra Fajr lines.';
     this.element('audio-volume-note').textContent = settings.unmuteForAdhan
-      ? 'The full recording plays once per enabled prayer. System output is temporarily unmuted at a minimum 35% volume, then restored after playback.'
+      ? 'System output is unmuted and set to 100% before the full recording plays, then restored after playback. The app volume still applies.'
       : 'The full recording plays once at each enabled prayer. System volume and mute still apply.';
     this.element('youtube-warning').hidden = !settings.youtubeUrl?.includes('5eApyXlK0RA');
     this.all('[name=audio-mode]').forEach((input) => { input.checked = input.value === settings.playbackMode; });

@@ -12,7 +12,7 @@ Adhan Desk is a small, free, open-source desktop app for people who keep a compu
 | Give Fajr its own recording | Optional imported Fajr audio; regular recording remains the fallback |
 | Stay available | Closing the window keeps the tray app running; packaged first launch enables login startup |
 | Control playback | Five prayer switches, volume, pause and stop |
-| Handle software output mute | Optional unmute and minimum 35% system output level during adhan; restore the previous state afterward |
+| Handle software output mute | Optional unmute and exactly 100% system output volume before adhan starts; restore the previous state afterward |
 | Understand status | Next prayer, source/refresh state and recent activity log |
 | Handle short network outages | Up to seven saved dated days and local audio |
 | Avoid repeated calls | Persistent prayer attempts; 90-second late-playback window |
@@ -26,7 +26,7 @@ Windows is the primary exercised platform. Installation, login startup, playback
 
 The computer must be on, awake and logged in, with the app running and an audible output. The app cannot play after shutdown, restore unplugged speakers or keep running after logout. Login startup restores it after login. Keep-awake requests help prevent idle suspension while enabled.
 
-Optional system unmute snapshots the prior system-output mute/volume, unmutes and raises that output to at least 35%, then restores the prior settings when playback ends or stops. It affects other sounds on that output while active. Support depends on Windows CoreAudio, macOS's output controls or an available Linux `pactl`/`wpctl` backend. Restoration is best effort; macOS controls the current default output rather than a captured device identifier. Physical power/mute controls, missing devices and separate application/session mute remain outside its guarantee.
+Optional system unmute snapshots the prior system-output mute and volume settings, then completes the unmute and change to exactly 100% system output volume before playback starts. It restores the prior volume and mute state when playback ends or stops. It affects other sounds on that output while active. Support depends on Windows CoreAudio, macOS's output controls or an available Linux `pactl`/`wpctl` backend. Restoration is best effort; macOS controls the current default output rather than a captured device identifier. Physical power/mute controls, missing devices and separate application/session mute remain outside its guarantee.
 
 The mosque's five published adhan times remain authoritative. Sunrise, Jumua and iqama do not add automatic calls. Source failures leave only already saved dates usable. Retry intervals grow from 1 to 2, 4, 8 and 15 minutes, then stay at 15 minutes. The cache is never extended beyond its dates or reused across a year boundary. Special Sabah/Imsak calendars require explicit support before acceptance.
 

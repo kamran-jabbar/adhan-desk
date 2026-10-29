@@ -13,12 +13,12 @@ function windowsMock(original = { volume: 0.12, muted: true, deviceId: 'speakers
   return { calls, run, state: () => state };
 }
 
-test('Windows snapshots, unmutes at a 35% minimum, and restores the same output', async () => {
+test('Windows snapshots, unmutes at 100%, and restores the same output', async () => {
   const mock = windowsMock();
   const service = new SystemAudioService({ platform: 'win32', run: mock.run });
   assert.equal(mock.calls.length, 0);
   const lease = await service.acquire();
-  assert.deepEqual(mock.state(), { volume: 0.35, muted: false, deviceId: 'speakers-A' });
+  assert.deepEqual(mock.state(), { volume: 1, muted: false, deviceId: 'speakers-A' });
   assert.match(mock.calls[0].exe, /powershell\.exe$/);
   assert.equal(mock.calls[0].options.windowsHide, true);
   assert.equal(mock.calls[0].options.timeout, 15000);
@@ -30,17 +30,18 @@ test('Windows snapshots, unmutes at a 35% minimum, and restores the same output'
   assert.equal(mock.calls.length, 3);
 });
 
-test('existing louder volume is preserved and overlapping leases restore only once', async () => {
+test('an 80% output reaches 100% and overlapping leases restore its original volume only once', async () => {
   const mock = windowsMock({ volume: 0.8, muted: false, deviceId: 'old-default' });
   const service = new SystemAudioService({ platform: 'win32', run: mock.run });
   const [first, second] = await Promise.all([service.acquire(), service.acquire()]);
-  assert.equal(mock.state().volume, 0.8);
+  assert.equal(mock.state().volume, 1);
   assert.equal(mock.calls.filter(call => call.action === 'Get').length, 1);
   await service.release(first);
   assert.equal(mock.calls.length, 2);
   await service.release(second);
   assert.equal(mock.calls.length, 3);
   assert.equal(mock.state().deviceId, 'old-default');
+  assert.equal(mock.state().volume, 0.8);
 });
 
 test('acquire rolls back partial command failure and does not poison later operations', async () => {
@@ -93,7 +94,7 @@ test('macOS uses built-in osascript and restores integer volume and mute', async
   const lease = await service.acquire();
   await service.release(lease);
   assert.ok(calls.every(call => call.exe === '/usr/bin/osascript'));
-  assert.equal(calls[1].args[1], 'set volume output volume 35 output muted false');
+  assert.equal(calls[1].args[1], 'set volume output volume 100 output muted false');
   assert.equal(calls[2].args[1], 'set volume output volume 15 output muted true');
 });
 
@@ -108,7 +109,7 @@ test('pactl captures the prior sink and restores each original channel level', a
   } });
   const lease = await service.acquire();
   const target = calls.find(call => call.args[0] === 'set-sink-volume');
-  assert.deepEqual(target.args, ['set-sink-volume', 'alsa_output.speakers', '11469', '22938']);
+  assert.deepEqual(target.args, ['set-sink-volume', 'alsa_output.speakers', '32768', '65536']);
   assert.equal(calls[0].options.env.LC_ALL, 'C');
   await service.release(lease);
   const sets = calls.filter(call => call.args[0] === 'set-sink-volume');
@@ -127,7 +128,7 @@ test('WirePlumber is a supported fallback when pactl is unavailable', async () =
     return { stdout: '' };
   } });
   const lease = await service.acquire();
-  assert.ok(calls.some(call => call.args.join(' ') === 'set-volume 42 0.35'));
+  assert.ok(calls.some(call => call.args.join(' ') === 'set-volume 42 1'));
   await service.release(lease);
   assert.ok(calls.some(call => call.args.join(' ') === 'set-volume 42 0.12'));
   assert.deepEqual(calls.at(-1).args, ['set-mute', '42', '1']);
@@ -146,4 +147,20 @@ test('missing Linux backends and a replaced WirePlumber device never claim succe
   const lease = await service.acquire(); const before = writes.length; changed = true;
   await assert.rejects(service.release(lease), /original audio output is no longer available/);
   assert.equal(writes.length, before);
+});
+
+test('Linux amplification above 100% is capped during playback and restored afterward', async () => {
+  const writes = [];
+  const service = new SystemAudioService({ platform: 'linux', run: async (exe, args) => {
+    if (exe === 'pactl') throw new Error('unavailable');
+    if (args[0] === 'inspect') return { stdout: 'id 42, type Node\nobject.serial = "100"' };
+    if (args[0] === 'get-volume') return { stdout: 'Volume: 1.50 [MUTED]' };
+    writes.push(args); return { stdout: '' };
+  } });
+  const lease = await service.acquire();
+  assert.deepEqual(writes[0], ['set-volume', '42', '1']);
+  assert.deepEqual(writes[1], ['set-mute', '42', '0']);
+  await service.release(lease);
+  assert.ok(writes.some(args => args.join(' ') === 'set-volume 42 1.5'));
+  assert.deepEqual(writes.at(-1), ['set-mute', '42', '1']);
 });

@@ -27,7 +27,7 @@ On macOS, copy the app into Applications before its first launch. On Linux, put 
 - Custom local recording import and optional configurable YouTube playback.
 - Separate imported Fajr recording, with the regular recording used when none is selected.
 - Per-prayer switches, volume, pause, stop, next-prayer countdown and activity log.
-- Optional system unmute and a minimum 35% system output level during adhan, with previous sound settings restored afterward.
+- Optional system unmute and exactly 100% system output volume before adhan starts, with previous sound settings restored afterward.
 - Background tray operation, login startup and optional idle-sleep prevention.
 - Up to seven dated timetable days cached for short internet outages, with duplicate-playback protection.
 
@@ -41,7 +41,7 @@ Import MP3, WAV, Ogg, M4A or FLAC to use another full recording. Codec support d
 
 The computer must be powered on, logged in and awake, with Adhan Desk running and an audible sound output. Keep-awake requests help prevent idle application suspension while enabled; they do not power on a computer, wake it from shutdown or override every power policy. The screen can turn off while audio remains available.
 
-**Unmute for adhan** is off by default in a fresh public installation. When enabled, the app attempts to unmute the system output and raise its volume to at least 35% for playback. It keeps a snapshot of the previous mute and volume settings and restores them when playback finishes or is stopped. The app's own playback-volume control still applies. This temporarily changes the system output level for other computer sounds too.
+**Unmute for adhan** is off by default in a fresh public installation. When enabled, the app saves the previous system-output mute and volume settings, then completes the unmute and volume change to exactly 100% before starting playback. It restores the previous volume and mute state when playback finishes or is stopped. The app's own playback-volume control still applies. This temporarily changes the system output level for other computer sounds too.
 
 System sound control uses Windows CoreAudio, built-in `osascript` on macOS, or `pactl`/`wpctl` on supported Linux audio setups. On macOS, restoration applies to the output that is default at restoration time; avoid switching outputs during playback if exact restoration matters. Control failures are reported and restoration is best effort. The option cannot turn on physical speakers, reconnect a device, undo a hardware mute or guarantee that a separately muted app/session is audible.
 
